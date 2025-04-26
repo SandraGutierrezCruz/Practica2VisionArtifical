@@ -27,31 +27,32 @@ if __name__ == '__main__':
     print("Training OCR classifier ...")
 
     data_ocr = template_det.data_loaders.OCRTrainingDataLoader()
-    if not os.path.exists(SAVED_TEXT_READER_FILE):
+    #if not os.path.exists(SAVED_TEXT_READER_FILE):
+    if not os.path.exists(SAVED_OCR_CLF):
 
         # Load OCR training data (individual char images)
         print("Loading train char OCR data ...")
         
         images_dict = data_ocr.load(args.train_ocr_path)
         
-        x = []
-        y = []
+        x_train = []
+        y_train = []
         for letter, images in images_dict.items():
             for image in images:
                 # Redimensionar de 30x30 a 1x900
                 features = image.flatten().astype(np.float32) / 255.0
-                x.append(features)
-                y.append(letter)
+                x_train.append(features)
+                y_train.append(letter)
         
-        x = np.array(x)
-        y = np.array(y)
+        x_train = np.array(x)
+        y_train = np.array(y)
         
         # Codificar etiquetas 
         label_encoder = sklearn.preprocessing.LabelEncoder()
-        y_encoded = label_encoder.fit_tranform(y)
+        y_encoded = label_encoder.fit_transform(y)
 
         # Train the OCR classifier for individual chars
-        clf = sklearn.svm.SVC(kernel='linear', C=1.0,probability=True)
+        clf = sklearn.svm.SVC(kernel='linear', C=1.0, probability=True)
         clf.fit(x, y_encoded)
         
         with open(SAVED_OCR_CLF, "wb") as pickle_file:
@@ -66,10 +67,25 @@ if __name__ == '__main__':
     if TEST_OCR_CLASSIFIER_IN_CHARS:
         # Load OCR testing data (individual char images) in args.test_char_ocr_path
         print("Loading test char OCR data ...")
-        # gt_test = # POR HACER
+        
+        images_dict = data_ocr.load(args.test_ocr_char_path)
+        x_test = []
+        y_test = []
+        for letter, images in images_dict.items():
+            for image in images:
+                # Redimensionar de 30x30 a 1x900
+                features = image.flatten().astype(np.float32) / 255.0
+                x_test.append(features)
+                y_test.append(letter)
+        
+        x_test = np.array(x_test)
+        y_test = np.array(y_test)
+        
+        # Codificar etiquetas
+        gt_test = label_encoder.transform(y_test)
         
         print("Executing classifier in char images ...")
-        # estimated_test = # POR HACER
+        estimated_test = clf.predict(x_test)
         
         # Precision clasificador OCR
         accuracy = sklearn.metrics.accuracy_score(gt_test, estimated_test)
