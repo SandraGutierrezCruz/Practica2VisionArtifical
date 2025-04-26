@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # Crear el cargador de datos OCR utilizando dicha clase 
     print("Training OCR classifier ...")
 
-    data_ocr = template_det.data_loaders.OCRTrainingDataLoader()
+    data_ocr = template_det.data_loaders.OCRTrainingDataLoader() #LINEA DE CODIGO QUE HAY QUE REVISAR 
     #if not os.path.exists(SAVED_TEXT_READER_FILE):
     if not os.path.exists(SAVED_OCR_CLF):
 
