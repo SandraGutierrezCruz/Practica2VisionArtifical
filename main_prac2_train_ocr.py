@@ -44,8 +44,8 @@ if __name__ == '__main__':
                 x_train.append(features)
                 y_train.append(letter)
         
-        x_train = np.array(x)
-        y_train = np.array(y)
+        x_train = np.array(x_train)
+        y_train = np.array(y_train)
         
         # Codificar etiquetas 
         label_encoder = sklearn.preprocessing.LabelEncoder()
@@ -106,8 +106,44 @@ if __name__ == '__main__':
         results_file = open(os.path.join(results_save_path, "results_text_lines.txt"), "w")
         
         # Execute the OCR over every single image in args.test_words_ocr_path
-        # POR HACER ...
+        for filename in os.listdir(args.test_ocr_words_path):
+            if filename.endswith(".jpg") or filename.endswith(".png") or filename.endswith(".jpeg"):
+                image_path = os.path.join(args.test_ocr_words_path, filename)
+                img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
+                if  img is None:
+                    print("Error reading image: ", image_path)
+                    continue
+                #Binarizar imagen (blanco y negro puro)
+                _, img_bin = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                #Detectar contornos letras 
+                contours, _ = cv2.findContours(img_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                
+                #ordenar letras izquierda a derecha usando la coordenada X 
+                bounding_boxes = [cv2.boundingRect(c) for c in contours]
+                sorted_boxes = sorted(bounding_boxes, key=lambda b: b[0])
+                
+                #extracción y reconocimiento de cada letra 
+                for (x, y, w, h) in sorted_boxes:
+                    if w > 2 and h > 5:  # Filtrar ruidos pequeños
+                        roi = img_bin[y:y+h, x:x+w]
+                        
+                        #redimensionar cada letra 
+                        roi_resized = cv2.resize(roi, (30, 30), interpolation=cv2.INTER_AREA)
+
+                        #extraer características 
+                        features = roi_resized.flatten().astype(np.float32) / 255.0
+                        features = features.reshape(1, -1)
+                        
+                        #predecir letra
+                        pred = clf.predict(features)
+                        letter = label_encoder.inverse_transform(pred)[0]
+                        predicted_word += letter
+                
+                #resultados       
+                results_file.write(f"{filename} {predicted_word}\n")
+                print(f"{filename}: {predicted_word}")
+                    
 
 
 
