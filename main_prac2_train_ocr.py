@@ -41,19 +41,25 @@ if __name__ == '__main__':
             for image in images:
                 # Redimensionar de 30x30 a 1x900
                 features = image.flatten().astype(np.float32) / 255.0
+                
+                #reducción de dimensionalidad utilizando PCA 
+                pca = sklearn.decomposition.PCA(n_components=0.9)
+                features = pca.fit_transform(features)
+                
+                #entrenamiento modelo 
                 x_train.append(features)
                 y_train.append(letter)
         
         x_train = np.array(x_train)
         y_train = np.array(y_train)
         
-        # Codificar etiquetas 
+        # Codificación de etiquetas 
         label_encoder = sklearn.preprocessing.LabelEncoder()
-        y_encoded = label_encoder.fit_transform(y)
+        y_encoded = label_encoder.fit_transform(y_train)
 
         # Train the OCR classifier for individual chars
         clf = sklearn.svm.SVC(kernel='linear', C=1.0, probability=True)
-        clf.fit(x, y_encoded)
+        clf.fit(x_train, y_encoded)
         
         with open(SAVED_OCR_CLF, "wb") as pickle_file:
             pickle.dump(clf, pickle_file)
@@ -75,13 +81,19 @@ if __name__ == '__main__':
             for image in images:
                 # Redimensionar de 30x30 a 1x900
                 features = image.flatten().astype(np.float32) / 255.0
+                
+                #reducción dimensionalidad utilizando PCA 
+                pca = sklearn.decomposition.PCA(n_components=0.9)
+                features = pca.fit_transform(features)
+                
+                #entrenamiento modelo
                 x_test.append(features)
                 y_test.append(letter)
         
         x_test = np.array(x_test)
         y_test = np.array(y_test)
         
-        # Codificar etiquetas
+        # Codificación de etiquetas
         gt_test = label_encoder.transform(y_test)
         
         print("Executing classifier in char images ...")
@@ -106,18 +118,18 @@ if __name__ == '__main__':
         results_file = open(os.path.join(results_save_path, "results_text_lines.txt"), "w")
         
         # Execute the OCR over every single image in args.test_words_ocr_path
-        for filename in os.listdir(args.test_ocr_words_path):
-            if filename.endswith(".jpg") or filename.endswith(".png") or filename.endswith(".jpeg"):
-                image_path = os.path.join(args.test_ocr_words_path, filename)
-                img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        for file_name in os.listdir(args.test_ocr_words_path):
+            if file_name.endswith(".jpg") or file_name.endswith(".png") or file_name.endswith(".jpeg"):
+                image_path = os.path.join(args.test_ocr_words_path, file_name)
+                image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
-                if  img is None:
+                if  image is None:
                     print("Error reading image: ", image_path)
                     continue
                 #Binarizar imagen (blanco y negro puro)
-                _, img_bin = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                _, image_binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
                 #Detectar contornos letras 
-                contours, _ = cv2.findContours(img_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours, _ = cv2.findContours(image_binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 
                 #ordenar letras izquierda a derecha usando la coordenada X 
                 bounding_boxes = [cv2.boundingRect(c) for c in contours]
@@ -126,7 +138,7 @@ if __name__ == '__main__':
                 #extracción y reconocimiento de cada letra 
                 for (x, y, w, h) in sorted_boxes:
                     if w > 2 and h > 5:  # Filtrar ruidos pequeños
-                        roi = img_bin[y:y+h, x:x+w]
+                        roi = image_binary[y:y+h, x:x+w]
                         
                         #redimensionar cada letra 
                         roi_resized = cv2.resize(roi, (30, 30), interpolation=cv2.INTER_AREA)
@@ -135,14 +147,18 @@ if __name__ == '__main__':
                         features = roi_resized.flatten().astype(np.float32) / 255.0
                         features = features.reshape(1, -1)
                         
+                        #reducción dimensionalidad utilizando PCA 
+                        pca = sklearn.decomposition.PCA(n_components=0.9)
+                        features = pca.fit_transform(features)
+                        
                         #predecir letra
                         pred = clf.predict(features)
                         letter = label_encoder.inverse_transform(pred)[0]
                         predicted_word += letter
                 
                 #resultados       
-                results_file.write(f"{filename} {predicted_word}\n")
-                print(f"{filename}: {predicted_word}")
+                results_file.write(f"{file_name} {predicted_word}\n")
+                print(f"{file_name}: {predicted_word}")
                     
 
 
