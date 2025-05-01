@@ -29,7 +29,7 @@ if __name__ == '__main__':
     print("Training OCR classifier ...")
     
 
-    data_ocr = OCRTrainingDataLoader()
+    data_ocr = template_det.data_loaders.OCRTrainingDataLoader()
     #if not os.path.exists(SAVED_TEXT_READER_FILE):
     if not os.path.exists(SAVED_OCR_CLF):
 
