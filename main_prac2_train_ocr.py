@@ -6,6 +6,8 @@ from sklearn.metrics import ConfusionMatrixDisplay
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+from ocr_training_data_loader import OCRTrainingDataLoader
+from sklearn.svm import SVC
 
 
 
@@ -25,8 +27,9 @@ if __name__ == '__main__':
     
     # Crear el cargador de datos OCR utilizando dicha clase 
     print("Training OCR classifier ...")
+    
 
-    data_ocr = template_det.data_loaders.OCRTrainingDataLoader() #LINEA DE CODIGO QUE HAY QUE REVISAR 
+    data_ocr = OCRTrainingDataLoader()
     #if not os.path.exists(SAVED_TEXT_READER_FILE):
     if not os.path.exists(SAVED_OCR_CLF):
 
@@ -42,10 +45,6 @@ if __name__ == '__main__':
                 # Redimensionar de 30x30 a 1x900
                 features = image.flatten().astype(np.float32) / 255.0
                 
-                #reducción de dimensionalidad utilizando PCA 
-                pca = sklearn.decomposition.PCA(n_components=0.9)
-                features = pca.fit_transform(features)
-                
                 #entrenamiento modelo 
                 x_train.append(features)
                 y_train.append(letter)
@@ -58,7 +57,7 @@ if __name__ == '__main__':
         y_encoded = label_encoder.fit_transform(y_train)
 
         # Train the OCR classifier for individual chars
-        clf = sklearn.svm.SVC(kernel='linear', C=1.0, probability=True)
+        clf = SVC(kernel='linear', C=1.0, probability=True)
         clf.fit(x_train, y_encoded)
         
         with open(SAVED_OCR_CLF, "wb") as pickle_file:
@@ -81,10 +80,6 @@ if __name__ == '__main__':
             for image in images:
                 # Redimensionar de 30x30 a 1x900
                 features = image.flatten().astype(np.float32) / 255.0
-                
-                #reducción dimensionalidad utilizando PCA 
-                pca = sklearn.decomposition.PCA(n_components=0.9)
-                features = pca.fit_transform(features)
                 
                 #entrenamiento modelo
                 x_test.append(features)
@@ -146,10 +141,6 @@ if __name__ == '__main__':
                         #extraer características 
                         features = roi_resized.flatten().astype(np.float32) / 255.0
                         features = features.reshape(1, -1)
-                        
-                        #reducción dimensionalidad utilizando PCA 
-                        pca = sklearn.decomposition.PCA(n_components=0.9)
-                        features = pca.fit_transform(features)
                         
                         #predecir letra
                         pred = clf.predict(features)
