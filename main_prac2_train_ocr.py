@@ -37,6 +37,7 @@ if __name__ == '__main__':
         print("Loading train char OCR data ...")
         
         images_dict = data_ocr.load(args.train_ocr_path)
+
         
         x_train = []
         y_train = []
@@ -50,7 +51,12 @@ if __name__ == '__main__':
                 y_train.append(letter)
         
         x_train = np.array(x_train)
+        # Asegurarse de que x_train tiene la forma correcta
+        if len(x_train.shape) == 1:
+            x_train = x_train.reshape(0, 1)
+        
         y_train = np.array(y_train)
+        
         
         # Codificación de etiquetas 
         label_encoder = sklearn.preprocessing.LabelEncoder()
